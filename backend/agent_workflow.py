@@ -21,7 +21,6 @@ class GraphState(TypedDict):
 
 # Initialize Groq LLM
 llm = ChatGroq(model=os.getenv("LLM_MODEL", "qwen/qwen3.8-27b"), temperature=0.1, groq_api_key=os.getenv("GROQ_API_KEY"))
-structured_llm = llm.with_structured_output(AnalysisResult)
 
 def security_node(state: GraphState):
     text = state["text"]
@@ -43,15 +42,20 @@ def pii_node(state: GraphState):
     return {"pii_clean_text": clean_text}
 
 def analysis_node(state: GraphState):
-    text = state["pii_clean_text"] or state["text"]
-    sys_msg = SystemMessage(content="You are an expert enterprise customer service analyst. Analyze the following conversation and extract all requested KPIs, sentiment breakdowns, emotion timelines, action items, agent scores, and entities. You MUST populate all arrays including 'kpis', 'action_items', 'entities', and 'sentence_level'. Do not return empty arrays.")
+    import json
+    text = state.get("pii_clean_text") or state["text"]
+    schema_str = json.dumps(AnalysisResult.model_json_schema(), indent=2)
+    sys_msg = SystemMessage(content=f"You are an expert enterprise customer service analyst. Analyze the following conversation and extract all requested KPIs, sentiment breakdowns, emotion timelines, action items, agent scores, and entities.\n\nYou MUST return ONLY a valid JSON object adhering strictly to the following JSON schema:\n{schema_str}")
     user_msg = HumanMessage(content=text)
     
     errors = state.get("errors", [])
     try:
-        # Use structured output with new massive schema
-        result = structured_llm.invoke([sys_msg, user_msg])
-        return {"analysis_result": result.model_dump(), "errors": errors}
+        # Use raw JSON mode to bypass Groq's brittle tool calling syntax wrapper
+        llm_json = llm.bind(response_format={"type": "json_object"})
+        result = llm_json.invoke([sys_msg, user_msg])
+        
+        parsed = json.loads(result.content)
+        return {"analysis_result": parsed, "errors": errors}
     except Exception as e:
         errors.append(f"Analysis failed: {str(e)}")
         return {"errors": errors}
