@@ -81,18 +81,18 @@ class Entity(BaseModel):
     value: str = ""
 
 class AnalysisResult(BaseModel):
-    overall_sentiment: str = ""
-    confidence: int = 0
-    overall_reasoning: str = ""
-    sentiment_breakdown: List[NameValue] = []
-    sentence_level: List[SentenceSentiment] = []
-    emotions: List[EmotionScore] = []
-    emotion_journey: List[EmotionTimeline] = []
-    summary: str = ""
-    kpis: List[KPI] = []
-    agent_score: Optional[AgentScore] = None
-    action_items: List[ActionItem] = []
-    entities: List[Entity] = []
+    overall_sentiment: str
+    confidence: int
+    overall_reasoning: str
+    sentiment_breakdown: List[NameValue]
+    sentence_level: List[SentenceSentiment]
+    emotions: List[EmotionScore]
+    emotion_journey: List[EmotionTimeline]
+    summary: str
+    kpis: List[KPI]
+    agent_score: AgentScore
+    action_items: List[ActionItem]
+    entities: List[Entity]
 
 class TextPayload(BaseModel):
     text: str
