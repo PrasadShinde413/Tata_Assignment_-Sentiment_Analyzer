@@ -54,19 +54,18 @@ def read_root():
 @app.post("/api/analyze")
 async def analyze_text(
     payload: TextPayload, 
-    background_tasks: BackgroundTasks,
     current_user: DBUser = Depends(get_current_active_user)
 ):
-    thread_id = str(uuid.uuid4())
-    config = {"configurable": {"thread_id": thread_id}}
+    # Compile graph statelessly (no PostgresSaver overhead)
+    graph = builder.compile()
+    final_state = await graph.ainvoke({"text": payload.text})
     
-    async def run_graph():
-        async with AsyncPostgresSaver.from_conn_string(DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")) as checkpointer:
-            graph = builder.compile(checkpointer=checkpointer)
-            await graph.ainvoke({"text": payload.text}, config)
-            
-    background_tasks.add_task(run_graph)
-    return {"message": "Workflow started. Analysis processing.", "thread_id": thread_id}
+    return {
+        "status": "complete",
+        "analysis": final_state.get("analysis_result"),
+        "eval_score": final_state.get("eval_score"),
+        "errors": final_state.get("errors", [])
+    }
 
 @app.get("/api/results/{thread_id}")
 async def get_results(

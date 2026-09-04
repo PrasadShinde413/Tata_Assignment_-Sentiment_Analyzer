@@ -29,35 +29,17 @@ export default function Dashboard() {
       
       const data = await res.json();
       
-      pollResults(data.thread_id);
+      if (data.status === 'complete') {
+        setResultData(data);
+        setAnalysisState('complete');
+      } else {
+        throw new Error('Analysis failed or returned invalid status.');
+      }
       
     } catch (err) {
       setError(err.message);
       setAnalysisState('idle');
     }
-  };
-
-  const pollResults = async (tId) => {
-    const token = localStorage.getItem('token');
-    
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`http://localhost:8000/api/results/${tId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (res.ok) {
-          const data = await res.json();
-          if (data.status === 'complete') {
-            setResultData(data);
-            setAnalysisState('complete');
-            clearInterval(interval);
-          }
-        }
-      } catch (err) {
-        console.error("Polling error", err);
-      }
-    }, 3000); // poll every 3s
   };
 
   return (
