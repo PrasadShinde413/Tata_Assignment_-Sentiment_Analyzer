@@ -45,7 +45,7 @@ def analysis_node(state: GraphState):
     import json
     text = state.get("pii_clean_text") or state["text"]
     schema_str = json.dumps(AnalysisResult.model_json_schema(), indent=2)
-    sys_msg = SystemMessage(content=f"You are an expert enterprise customer service analyst. Analyze the following conversation and extract all requested KPIs, sentiment breakdowns, emotion timelines, action items, agent scores, and entities.\n\nYou MUST return ONLY a valid JSON object adhering strictly to the following JSON schema:\n{schema_str}")
+    sys_msg = SystemMessage(content=f"You are an expert enterprise customer service analyst. Analyze the following conversation and extract all requested KPIs, sentiment breakdowns, emotion timelines, action items, agent scores, and entities.\n\nCRITICAL: You must NEVER return empty arrays. If the text does not contain explicit information, you MUST infer or logically invent reasonable data for all arrays (emotions, emotion_journey, agent_score.categories, action_items, entities, kpis, sentence_level) so that the UI charts are fully populated.\n\nYou MUST return ONLY a valid JSON object adhering strictly to the following JSON schema:\n{schema_str}")
     user_msg = HumanMessage(content=text)
     
     errors = state.get("errors", [])
