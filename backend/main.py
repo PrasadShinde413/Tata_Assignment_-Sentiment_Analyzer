@@ -4,7 +4,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.future import select
-from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
 from auth import auth_router, get_password_hash, get_current_active_user
 from models import User, TextPayload, DBUser
@@ -16,10 +15,6 @@ async def lifespan(app: FastAPI):
     # Initialize DB Tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        
-    # Setup Checkpointer Tables
-    async with AsyncPostgresSaver.from_conn_string(DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")) as saver:
-        await saver.setup()
         
     # Insert a single Mock Admin User if not exists
     async with AsyncSessionLocal() as session:
@@ -72,22 +67,5 @@ async def get_results(
     thread_id: str,
     current_user: DBUser = Depends(get_current_active_user)
 ):
-    config = {"configurable": {"thread_id": thread_id}}
-    async with AsyncPostgresSaver.from_conn_string(DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")) as checkpointer:
-        graph = builder.compile(checkpointer=checkpointer)
-        state = await graph.aget_state(config)
-        
-    if not state or not state.values:
-        return {"status": "processing"}
-        
-    # Check if analysis is complete
-    analysis = state.values.get("analysis_result")
-    if analysis:
-        return {
-            "status": "complete",
-            "analysis": analysis,
-            "eval_score": state.values.get("eval_score"),
-            "errors": state.values.get("errors", [])
-        }
-    else:
-        return {"status": "processing"}
+    # Endpoint deprecated since analysis is now fully synchronous
+    return {"status": "processing"}
