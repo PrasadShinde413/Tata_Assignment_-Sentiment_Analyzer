@@ -9,6 +9,9 @@
 A cutting-edge, full-stack Enterprise Sentiment Analysis Dashboard built for the Tata Assignment. 
 This application leverages a dynamic **LangGraph workflow** powered by **Groq's LLaMA 3.1 8B** model to analyze raw customer service conversations, extract actionable insights, and render them in a stunning glassmorphism React dashboard.
 
+## 🚀 Live Demo
+Access the fully deployed application here: **[https://tataprasadshindeassignment.netlify.app/](https://tataprasadshindeassignment.netlify.app/)**
+
 ## 🌟 Key Features
 
 - **Automated PII Redaction:** Automatically scrubs emails and phone numbers before AI processing to ensure enterprise data compliance.
