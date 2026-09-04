@@ -20,7 +20,7 @@ class GraphState(TypedDict):
     errors: List[str]
 
 # Initialize Groq LLM
-llm = ChatGroq(model=os.getenv("LLM_MODEL", "qwen/qwen3.8-27b"), temperature=0.1, groq_api_key=os.getenv("GROQ_API_KEY"))
+llm = ChatGroq(model=os.getenv("LLM_MODEL", "qwen/qwen3.8-27b"), temperature=0.1, max_tokens=950, groq_api_key=os.getenv("GROQ_API_KEY"))
 
 def security_node(state: GraphState):
     text = state["text"]
