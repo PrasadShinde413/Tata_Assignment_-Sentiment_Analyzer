@@ -61,14 +61,27 @@ def analysis_node(state: GraphState):
         return {"errors": errors}
 
 def evaluation_node(state: GraphState):
+    import json
     result_dict = state.get("analysis_result")
     text = state.get("text", "")
     if not result_dict:
         return {"eval_score": 0.0}
         
-    # Bypass DeepEval because it attempts to download local cross-encoder models 
-    # when an OpenAI key is missing, which completely blocks the API for minutes.
-    score = 0.95
+    summary = result_dict.get("summary", "")
+    
+    sys_msg = SystemMessage(content="You are an expert LLM evaluator. Evaluate the relevance, accuracy, and completeness of the following AI summary based on the original customer service transcript. Output ONLY a valid JSON object strictly adhering to this schema: {\"score\": float}. The score must be a number between 0.0 and 1.0, where 1.0 is a perfect summary.")
+    user_msg = HumanMessage(content=f"Original Transcript:\n{text}\n\nAI Summary:\n{summary}")
+    
+    try:
+        llm_json = llm.bind(response_format={"type": "json_object"})
+        eval_result = llm_json.invoke([sys_msg, user_msg])
+        eval_data = json.loads(eval_result.content)
+        score = float(eval_data.get("score", 0.95))
+        # Ensure score is within 0.0 - 1.0 bounds
+        score = max(0.0, min(1.0, score))
+    except Exception as e:
+        print(f"Evaluation failed: {e}")
+        score = 0.0
         
     return {"eval_score": score}
 
